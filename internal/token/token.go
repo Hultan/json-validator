@@ -15,12 +15,14 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers + literals
-	IDENT  = "IDENT"  // add, foobar, x, y, ...
-	BOOL   = "BOOL"   // true, false
-	INT    = "INT"    // 1343456
-	FLOAT  = "FLOAT"  // 12.3455
-	STRING = "STRING" // "foobar"
-	DATE   = "DATE"   // ISO8601 : (https://sv.wikipedia.org/wiki/ISO_8601) 2001-02-03T04:05+01:00
+	IDENT      = "IDENT"      // add, foobar, x, y, ...
+	BOOL       = "BOOL"       // true, false
+	INT_LIT    = "INT_LIT"    // 1343456
+	FLOAT_LIT  = "FLOAT_LIT"  // 12.3455
+	STRING_LIT = "STRING_LIT" // "foobar"
+	INT        = "int"        // int keyword
+	FLOAT      = "float"      // float keyword
+	STRING     = "string"     // string keyword
 
 	// Operators
 	ASSIGN   = "="
@@ -43,7 +45,7 @@ const (
 
 	// Delimiters
 	COMMA     = ","
-	DOT     = "."
+	DOT       = "."
 	SEMICOLON = ";"
 	COLON     = ":"
 
@@ -85,7 +87,6 @@ var keywordsMap = map[string]TokenKind{
 	"bool":   BOOL,
 	"float":  FLOAT,
 	"string": STRING,
-	"date":   DATE,
 
 	"for":      FOR,
 	"do":       DO,

@@ -72,6 +72,8 @@ func (l *Lexer) NextToken() token.Token {
 		currentToken = l.newTokenString(token.SEMICOLON, string(l.currentRune))
 	case ':':
 		currentToken = l.newTokenString(token.COLON, string(l.currentRune))
+	case '$':
+		currentToken = l.newTokenString(token.DOLLAR, string(l.currentRune))
 	case ',':
 		currentToken = l.newTokenString(token.COMMA, string(l.currentRune))
 	case '.':
@@ -86,7 +88,7 @@ func (l *Lexer) NextToken() token.Token {
 		currentToken = l.newTokenString(token.RPAREN, string(l.currentRune))
 	case '"':
 		lit := l.readString()
-		currentToken = l.newTokenString(token.STRING, lit)
+		currentToken = l.newTokenString(token.STRING_LIT, lit)
 		advance = len(lit) + 2 // + 2 because of the two quotation marks
 	case '[':
 		currentToken = l.newTokenString(token.LBRACKET, string(l.currentRune))
@@ -103,9 +105,9 @@ func (l *Lexer) NextToken() token.Token {
 		} else if l.isDigit(l.currentRune) {
 			lit := l.readNumber()
 			if strings.Contains(lit, ".") {
-				currentToken = l.newTokenString(token.FLOAT, lit)
+				currentToken = l.newTokenString(token.FLOAT_LIT, lit)
 			} else {
-				currentToken = l.newTokenString(token.INT, lit)
+				currentToken = l.newTokenString(token.INT_LIT, lit)
 			}
 			l.column += len(lit)
 			return currentToken
