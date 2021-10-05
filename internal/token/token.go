@@ -43,6 +43,7 @@ const (
 
 	// Delimiters
 	COMMA     = ","
+	DOT     = "."
 	SEMICOLON = ";"
 	COLON     = ":"
 

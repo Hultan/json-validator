@@ -91,6 +91,30 @@ int x,y=5+7;`
 	tokenTest(t, input, tests)
 }
 
+func TestNewLexer_FloatNumbers(t *testing.T) {
+	input := `5.0;5;5.1.1;`
+
+	tests := []struct {
+		expectedType    token.TokenKind
+		expectedLiteral string
+		expectedFileName string
+		expectedLine    int
+		expectedColumn  int
+	}{
+		{token.FLOAT, "5.0", "test.per",1, 0},
+		{token.SEMICOLON, ";", "test.per",1, 3},
+		{token.INT, "5", "test.per",1, 4},
+		{token.SEMICOLON, ";", "test.per",1, 5},
+		{token.FLOAT, "5.1", "test.per",1, 6},
+		{token.DOT, ".", "test.per",1, 9},
+		{token.INT, "1", "test.per",1, 10},
+		{token.SEMICOLON, ";", "test.per",1, 11},
+
+		{token.EOF, "EOF", "test.per",1, 12},
+	}
+
+	tokenTest(t, input, tests)
+}
 
 func TestNewLexer_FloatAssignment(t *testing.T) {
 	input := `float f=5.0;

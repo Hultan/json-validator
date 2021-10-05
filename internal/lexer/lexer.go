@@ -3,6 +3,7 @@ package lexer
 import (
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/hultan/per/internal/token"
 )
@@ -73,6 +74,8 @@ func (l *Lexer) NextToken() token.Token {
 		currentToken = l.newTokenString(token.COLON, string(l.currentRune))
 	case ',':
 		currentToken = l.newTokenString(token.COMMA, string(l.currentRune))
+	case '.':
+		currentToken = l.newTokenString(token.DOT, string(l.currentRune))
 	case '{':
 		currentToken = l.newTokenString(token.LBRACE, string(l.currentRune))
 	case '}':
@@ -99,7 +102,11 @@ func (l *Lexer) NextToken() token.Token {
 			return currentToken
 		} else if l.isDigit(l.currentRune) {
 			lit := l.readNumber()
-			currentToken = l.newTokenString(token.INT, lit)
+			if strings.Contains(lit, ".") {
+				currentToken = l.newTokenString(token.FLOAT, lit)
+			} else {
+				currentToken = l.newTokenString(token.INT, lit)
+			}
 			l.column += len(lit)
 			return currentToken
 		} else {
@@ -176,6 +183,12 @@ func (l *Lexer) readIdentifier() string {
 
 func (l *Lexer) readNumber() string {
 	position := l.position
+	for l.isDigit(l.currentRune) {
+		l.readRune()
+	}
+	if l.currentRune == '.' {
+		l.readRune()
+	}
 	for l.isDigit(l.currentRune) {
 		l.readRune()
 	}
