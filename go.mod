@@ -1,6 +1,6 @@
-module github.com/hultan/per
+module github.com/hultan/json-validator
 
-go 1.14
+go 1.17
 
 require (
 	github.com/davecgh/go-spew v1.1.0

@@ -1,11 +1,14 @@
+// Package lexer is based on the code from the book
+// Writing an Interpreter in Go 1.7 by Thorsten Ball
+// https://thorstenball.com/books/
+
 package lexer
 
 import (
 	"io"
 	"io/ioutil"
-	"strings"
 
-	"github.com/hultan/per/internal/token"
+	"github.com/hultan/json-validator/internal/token"
 )
 
 type Lexer struct {
@@ -13,24 +16,23 @@ type Lexer struct {
 	position     int  // current position in input (points to current char)
 	readPosition int  // current reading position in input (after current char)
 	currentRune  rune // current char under examination
-	fileName     string
 	line         int
 	column       int
 }
 
-func NewLexer(fileName string, reader io.Reader) *Lexer {
+func NewLexer(reader io.Reader) *Lexer {
 	input, err := ioutil.ReadAll(reader)
 	if err != nil {
 		panic(err)
 	}
 	text := string(input)
 	l := &Lexer{
-		fileName: fileName,
 		runeList: []rune(text),
-		line: 1,
+		line:     1,
 	}
 	if text != "" {
-		l.currentRune = l.runeList[l.position]
+		l.readRune()
+		// l.currentRune = l.runeList[l.position]
 	}
 	return l
 }
@@ -39,41 +41,10 @@ func (l *Lexer) NextToken() token.Token {
 	var currentToken token.Token
 	advance := 1
 	l.skipWhitespace()
-	l.skipComment()
 
 	switch l.currentRune {
-	case '=':
-		if l.peekRune() == '=' {
-			l.readRune()
-			currentToken = l.newTokenString(token.EQ, "==")
-		} else {
-			currentToken = l.newTokenString(token.ASSIGN, string(l.currentRune))
-		}
-	case '+':
-		currentToken = l.newTokenString(token.PLUS, string(l.currentRune))
-	case '-':
-		currentToken = l.newTokenString(token.MINUS, string(l.currentRune))
-	case '!':
-		if l.peekRune() == '=' {
-			l.readRune()
-			currentToken = l.newTokenString(token.NOT_EQ, "!=")
-		} else {
-			currentToken = l.newTokenString(token.BANG, string(l.currentRune))
-		}
-	case '/':
-		currentToken = l.newTokenString(token.SLASH, string(l.currentRune))
-	case '*':
-		currentToken = l.newTokenString(token.ASTERISK, string(l.currentRune))
-	case '<':
-		currentToken = l.newTokenString(token.LT, string(l.currentRune))
-	case '>':
-		currentToken = l.newTokenString(token.GT, string(l.currentRune))
-	case ';':
-		currentToken = l.newTokenString(token.SEMICOLON, string(l.currentRune))
 	case ':':
 		currentToken = l.newTokenString(token.COLON, string(l.currentRune))
-	case '$':
-		currentToken = l.newTokenString(token.DOLLAR, string(l.currentRune))
 	case ',':
 		currentToken = l.newTokenString(token.COMMA, string(l.currentRune))
 	case '.':
@@ -82,10 +53,6 @@ func (l *Lexer) NextToken() token.Token {
 		currentToken = l.newTokenString(token.LBRACE, string(l.currentRune))
 	case '}':
 		currentToken = l.newTokenString(token.RBRACE, string(l.currentRune))
-	case '(':
-		currentToken = l.newTokenString(token.LPAREN, string(l.currentRune))
-	case ')':
-		currentToken = l.newTokenString(token.RPAREN, string(l.currentRune))
 	case '"':
 		lit := l.readString()
 		currentToken = l.newTokenString(token.STRING_LIT, lit)
@@ -102,13 +69,9 @@ func (l *Lexer) NextToken() token.Token {
 			currentToken = l.newTokenString(token.LookupIdent(lit), lit)
 			l.column += len(lit)
 			return currentToken
-		} else if l.isDigit(l.currentRune) {
+		} else if l.isDigit(l.currentRune) || l.currentRune == '-' {
 			lit := l.readNumber()
-			if strings.Contains(lit, ".") {
-				currentToken = l.newTokenString(token.FLOAT_LIT, lit)
-			} else {
-				currentToken = l.newTokenString(token.INT_LIT, lit)
-			}
+			currentToken = l.newTokenString(token.NUMBER_LIT, lit)
 			l.column += len(lit)
 			return currentToken
 		} else {
@@ -119,23 +82,6 @@ func (l *Lexer) NextToken() token.Token {
 	l.readRune()
 	l.column += advance
 	return currentToken
-}
-
-func (l *Lexer) skipComment() {
-	for l.isComment() {
-		l.skipCommentLine()
-		l.skipWhitespace()
-	}
-}
-
-func (l *Lexer) skipCommentLine() {
-	for keepGoing := true; keepGoing; {
-		if l.isNewLine() || l.currentRune == 0 {
-			keepGoing = false
-			break
-		}
-		l.readRune()
-	}
 }
 
 func (l *Lexer) skipWhitespace() {
@@ -172,6 +118,14 @@ func (l *Lexer) peekRune() rune {
 	}
 }
 
+func (l *Lexer) peekRuneN(n int) rune {
+	if l.readPosition >= len(l.runeList) {
+		return 0
+	} else {
+		return l.runeList[l.readPosition+n]
+	}
+}
+
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	first := true
@@ -185,6 +139,9 @@ func (l *Lexer) readIdentifier() string {
 
 func (l *Lexer) readNumber() string {
 	position := l.position
+	if l.currentRune == '-' {
+		l.readRune()
+	}
 	for l.isDigit(l.currentRune) {
 		l.readRune()
 	}
@@ -194,6 +151,15 @@ func (l *Lexer) readNumber() string {
 	for l.isDigit(l.currentRune) {
 		l.readRune()
 	}
+	if l.currentRune == 'e' || l.currentRune == 'E' {
+		l.readRune()
+		if l.currentRune == '-' || l.currentRune == '+' {
+			l.readRune()
+		}
+		for l.isDigit(l.currentRune) {
+			l.readRune()
+		}
+	}
 	return string(l.runeList[position:l.position])
 }
 
@@ -201,15 +167,27 @@ func (l *Lexer) readString() string {
 	position := l.position + 1
 	for {
 		l.readRune()
+		if l.currentRune == '\\' {
+			if l.peekRune() == '"' || l.peekRune() == '\\' || l.peekRune() == '/' || l.peekRune() == 'b' ||
+				l.peekRune() == 'f' || l.peekRune() == 'n' || l.peekRune() == 'r' {
+				l.readRune()
+				continue
+			} else if l.peekRune() == 'u' {
+				for i := 0; i < 4; i++ {
+					if !l.isHexDigit(l.peekRuneN(i)) {
+						// TODO : Error, illegal characters
+					}
+					l.readRune()
+				}
+			} else {
+				// TODO : Error, illegal characters
+			}
+		}
 		if l.currentRune == '"' || l.currentRune == 0 {
 			break
 		}
 	}
 	return string(l.runeList[position:l.position])
-}
-
-func (l *Lexer) isComment() bool {
-	return l.currentRune == '/' && l.peekRune() == '/'
 }
 
 func (l *Lexer) isLetterOrDigit(r rune) bool {
@@ -226,6 +204,10 @@ func (l *Lexer) isDigit(r rune) bool {
 	return '0' <= r && r <= '9'
 }
 
+func (l *Lexer) isHexDigit(r rune) bool {
+	return '0' <= r && r <= '9' || 'a' <= r && r <= 'f' || 'A' <= r && r <= 'F'
+}
+
 func (l *Lexer) isWhitespace() bool {
 	return l.currentRune == ' ' ||
 		l.currentRune == '\t'
@@ -238,10 +220,9 @@ func (l *Lexer) isNewLine() bool {
 
 func (l *Lexer) newTokenString(tokenKind token.TokenKind, literal string) token.Token {
 	return token.Token{
-		Kind:     tokenKind,
-		Literal:  literal,
-		FileName: l.fileName,
-		Line:     l.line,
-		Column:   l.column,
+		Kind:    tokenKind,
+		Literal: literal,
+		Line:    l.line,
+		Column:  l.column,
 	}
 }
