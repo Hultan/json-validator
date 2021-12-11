@@ -5,7 +5,6 @@
 package parser
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/hultan/json-validator/internal/lexer"
@@ -44,51 +43,9 @@ func NewParser(fileName string) *Parser {
 }
 
 func (p *Parser) nextToken() {
-	fmt.Printf("%20s%20s (%v,%v)\n", p.curToken.Kind, p.curToken.Literal, p.curToken.Line, p.curToken.Column)
+	// fmt.Printf("%20s%20s (%v,%v)\n", p.curToken.Kind, p.curToken.Literal, p.curToken.Line, p.curToken.Column)
 	p.curToken = p.peekToken
 	p.peekToken = p.l.NextToken()
-}
-
-func (p *Parser) curTokenIs(t token.TokenKind) bool {
-	return p.curToken.Kind == t
-}
-
-func (p *Parser) peekTokenIs(t token.TokenKind) bool {
-	return p.peekToken.Kind == t
-}
-
-func (p *Parser) expectPeek(t token.TokenKind) bool {
-	if p.peekTokenIs(t) {
-		p.nextToken()
-		return true
-	} else {
-		p.peekError(t)
-		return false
-	}
-}
-
-func (p *Parser) peekError(t ...token.TokenKind) {
-	ts := p.getTokenString(t)
-	msg := fmt.Sprintf("expected next token to be %s, got %s instead",
-		ts, p.peekToken.Kind)
-	err := ParserError{
-		Message: msg,
-		Token:   p.curToken,
-	}
-	p.Errors = append(p.Errors, err)
-}
-
-func (p *Parser) getTokenString(t []token.TokenKind) string {
-	var ts string
-	for i, kind := range t {
-		if i == len(t)-1 {
-			ts += " or "
-		} else if i > 0 {
-			ts += ","
-		}
-		ts += fmt.Sprintf("%s", kind)
-	}
-	return ts
 }
 
 func (p *Parser) Parse() bool {
@@ -96,14 +53,10 @@ func (p *Parser) Parse() bool {
 }
 
 func (p *Parser) parseObject() bool {
-	count := 0
+	first := true
 
 	if p.curToken.Kind != token.LBRACE {
-		err := ParserError{
-			Message: "expected {",
-			Token:   p.curToken,
-		}
-		p.Errors = append(p.Errors, err)
+		p.addError("Expected left brace - {")
 		return false
 	}
 	p.nextToken()
@@ -114,24 +67,16 @@ func (p *Parser) parseObject() bool {
 			break
 		}
 		// Accept a comma if this is not the first item
-		if count > 0 && p.curToken.Kind == token.COMMA {
+		if !first && p.curToken.Kind == token.COMMA {
 			p.nextToken()
 		}
 		if p.curToken.Kind != token.STRING_LIT {
-			err := ParserError{
-				Message: "expected string literal",
-				Token:   p.curToken,
-			}
-			p.Errors = append(p.Errors, err)
+			p.addError("Expected string literal")
 			return false
 		}
 		p.nextToken()
 		if p.curToken.Kind != token.COLON {
-			err := ParserError{
-				Message: "expected :",
-				Token:   p.curToken,
-			}
-			p.Errors = append(p.Errors, err)
+			p.addError("Expected a colon - :")
 			return false
 
 		}
@@ -142,15 +87,11 @@ func (p *Parser) parseObject() bool {
 			return false
 		}
 
-		count++
+		first = false
 	}
 
 	if p.curToken.Kind != token.RBRACE {
-		err := ParserError{
-			Message: "expected }",
-			Token:   p.curToken,
-		}
-		p.Errors = append(p.Errors, err)
+		p.addError("Expected right brace - }")
 		return false
 	}
 	p.nextToken()
@@ -175,25 +116,17 @@ func (p *Parser) parseValue() bool {
 	case token.NULL:
 		p.nextToken()
 	default:
-		err := ParserError{
-			Message: "expected value",
-			Token:   p.curToken,
-		}
-		p.Errors = append(p.Errors, err)
+		p.addError("Unknown value")
 		return false
 	}
 	return true
 }
 
 func (p *Parser) parseArray() bool {
-	count := 0
+	first := true
 
 	if p.curToken.Kind != token.LBRACKET {
-		err := ParserError{
-			Message: "expected [",
-			Token:   p.curToken,
-		}
-		p.Errors = append(p.Errors, err)
+		p.addError("Expected left bracket - [")
 		return false
 	}
 	p.nextToken()
@@ -204,7 +137,7 @@ func (p *Parser) parseArray() bool {
 			break
 		}
 		// Accept a comma if this is not the first item
-		if count > 0 && p.curToken.Kind == token.COMMA {
+		if !first && p.curToken.Kind == token.COMMA {
 			p.nextToken()
 		}
 
@@ -213,18 +146,21 @@ func (p *Parser) parseArray() bool {
 			return false
 		}
 
-		count++
+		first = false
 	}
 
 	if p.curToken.Kind != token.RBRACKET {
-		err := ParserError{
-			Message: "expected ]",
-			Token:   p.curToken,
-		}
-		p.Errors = append(p.Errors, err)
+		p.addError("Expected right bracket - ]")
 		return false
 	}
 	p.nextToken()
 
 	return true
+}
+func (p *Parser) addError(message string) {
+	err := ParserError{
+		Message: message,
+		Token:   p.curToken,
+	}
+	p.Errors = append(p.Errors, err)
 }

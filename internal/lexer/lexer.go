@@ -175,12 +175,12 @@ func (l *Lexer) readString() string {
 			} else if l.peekRune() == 'u' {
 				for i := 0; i < 4; i++ {
 					if !l.isHexDigit(l.peekRuneN(i)) {
-						// TODO : Error, illegal characters
+						// TODO : Invalid unicode character
 					}
 					l.readRune()
 				}
 			} else {
-				// TODO : Error, illegal characters
+				// TODO : Invalid escape character
 			}
 		}
 		if l.currentRune == '"' || l.currentRune == 0 {

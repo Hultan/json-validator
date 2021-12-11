@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	p := parser.NewParser("test3.json")
+	p := parser.NewParser("test1.json")
 	result := p.Parse()
 	fmt.Println("Validation : ", result)
 	for _, e := range p.Errors {
