@@ -1,4 +1,4 @@
-package lexer
+package json_lexer
 
 import (
 	"fmt"

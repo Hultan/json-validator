@@ -1,8 +1,8 @@
-// Package parser is based on the code from the book
+// Package json-parser is based on the code from the book
 // Writing an Interpreter in Go 1.7 by Thorsten Ball
 // https://thorstenball.com/books/
 
-package parser
+package json_parser
 
 import (
 	"os"
@@ -31,7 +31,7 @@ func NewParser(fileName string) *Parser {
 		panic(err)
 	}
 
-	// Create parser and lexer
+	// Create json-parser and lexer
 	p := &Parser{}
 	p.l = json_lexer.NewLexer(file)
 
@@ -48,7 +48,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) Parse() bool {
+func (p *Parser) Validate() bool {
 	return p.parseObject()
 }
 

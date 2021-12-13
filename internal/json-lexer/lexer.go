@@ -1,8 +1,8 @@
-// Package lexer is based on the code from the book
+// Package json-lexer is based on the code from the book
 // Writing an Interpreter in Go 1.7 by Thorsten Ball
 // https://thorstenball.com/books/
 
-package lexer
+package json_lexer
 
 import (
 	"io"
