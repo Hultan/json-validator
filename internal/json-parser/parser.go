@@ -7,7 +7,7 @@ package parser
 import (
 	"os"
 
-	"github.com/hultan/json-validator/internal/lexer"
+	"github.com/hultan/json-validator/internal/json-lexer"
 	"github.com/hultan/json-validator/internal/token"
 )
 
@@ -17,7 +17,7 @@ type ParserError struct {
 }
 
 type Parser struct {
-	l      *lexer.Lexer
+	l      *json_lexer.Lexer
 	Errors []ParserError
 
 	curToken  token.Token
@@ -33,7 +33,7 @@ func NewParser(fileName string) *Parser {
 
 	// Create parser and lexer
 	p := &Parser{}
-	p.l = lexer.NewLexer(file)
+	p.l = json_lexer.NewLexer(file)
 
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
